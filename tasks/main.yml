@@ -1,0 +1,41 @@
+
+---
+# tasks file for installation_and_configuration_wordpress
+
+- name: Creating DataBase
+  mysql_db:
+     name: "{{ db_name }}"
+     state: present
+     login_user: root
+     login_password: "{{ mysql_root_password }}"
+ 
+- name: Create user for our DataBase
+  mysql_user:
+     name: "{{ db_user }}"
+     password: "{{ db_passwd }}"
+     priv: "{{ db_name }}.*:ALL"
+     state: present
+     login_user: root
+     login_password: "{{ mysql_root_password }}"
+
+- name: Nginx conf
+  template:
+     src: wordpress.j2
+     dest: /etc/nginx/sites-available/wordpress.conf
+  notify:
+     - restart nginx
+
+- name: Activate site config
+  file:
+     src: /etc/nginx/sites-available/wordpress.conf
+     dest: /etc/nginx/sites-enabled/wordpress.conf
+     state: link
+
+- name: Download WordPress
+  get_url:
+     url: https://wordpress.org/latest.tar.gz
+     dest: /tmp/latest.tar.gz
+       
+- name: Unpack WordPress and set directory permissions
+  shell: tar xvfz /tmp/latest.tar.gz -C /var/www/html && chown -R www-data:www-data /var/www/html
+        
